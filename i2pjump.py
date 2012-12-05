@@ -148,7 +148,6 @@ def update_db():
 
 if __name__ == '__main__':
     setup_config()
-    print DB_FILE
 
     try:
         with open(DB_FILE) as f: pass
