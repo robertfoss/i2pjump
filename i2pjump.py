@@ -24,7 +24,6 @@ class Handler(BaseHTTPRequestHandler):
     
     def do_GET(self):        
         path = self.path.split('/')
-        print path
         if(len(path) == 2 and path[1] == ''):
             self.send_response(200)
             self.end_headers()
