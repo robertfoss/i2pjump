@@ -1,12 +1,13 @@
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from SocketServer import ThreadingMixIn
+from urllib2 import HTTPError
 import json
-import urllib
+import urllib2
 import time
 import threading
 
 
-# configuration
+# Configuration
 PROXY = {"http" : "http://127.0.0.1:4444"}
 HOSTS_FILES = ["http://www.i2p2.i2p/hosts.txt"]
 NEWHOSTS_FILES = ["http://stats.i2p/cgi-bin/newhosts.txt"]
@@ -26,10 +27,16 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
             self.wfile.write("%d host(s) indexed\n" % (len(lookup_db)))
+            self.wfile.write("\nHosts fetched from: %s" % (str(HOSTS_FILES + NEWHOSTS_FILES)))
         elif(len(path) == 3 and path[1] == "jump" and path[2] != ''):
-            if path[2] in lookup_db:
+            dest = path[2].split('?')
+            if dest[0] in lookup_db:
                 self.send_response(301)
-                self.send_header("Location", "http://" + path[2] + "/" + "?i2paddresshelper=" + lookup_db[path[2]])
+                if len(dest) == 1:
+                    self.send_header("Location", "http://"+dest[0]+"/"+"?i2paddresshelper="+lookup_db[dest[0]])
+                else:
+                    self.send_header("Location", "http://"+dest[0]+"/"+"?"+dest[1]+"&i2paddresshelper="+lookup_db[dest[0]])
+                self.wfile.write("Redirecting to %s..\n" % (dest[0]))
                 self.end_headers()
             else:
                 self.send_response(200)
@@ -74,30 +81,28 @@ def save_db():
         with fp:
             json.dump(lookup_db, fp)
 
+def setup_config():
+    proxy = urllib2.ProxyHandler(PROXY)
+    opener = urllib2.build_opener(proxy)
+    urllib2.install_opener(opener)
 
 def fetch_data(url):
     """Fetch host data from I2P jump service and interpret failure modes."""
     try:
-        hosts_file = urllib.urlopen(url, proxies=PROXY)
+        hosts_file = urllib2.urlopen(url)
         data = hosts_file.read()
         hosts_file.close()
-        if "Eepsite unknown" in data:
-            print "%s through proxy %s returned \'Eepsite unknown\'" % (url, PROXY['http'])
-            return False
-        if "not reachable" in data:
-            print "%s through proxy %s returned \'Eepsite unreachable\'" % (url, PROXY['http'])
-            return False
-        if "404<" in data:
-            print "%s through proxy %s returned \'404\'" % (url, PROXY['http'])
-            return False
-        if "Banned<" in data:
+        if "Banned<" in data:   ## Throttled by stats.i2p
             print "%s through proxy %s returned \'Banned\'" % (url, PROXY['http'])
             return False
-        if data == "":
-            print "%s through proxy %s returned \'""\'" % (url, PROXY['http'])
+        if len(data) == 0:      ## Connection failed
+            print "%s through proxy %s returned no data" % (url, PROXY['http'])
             return False
-    except IOError:
-        print "Proxy %s failed" % (PROXY['http'])
+    except HTTPError, e:
+        print "HTTP error-code #%d" % (e.code)
+        return False
+    except IOError, e:
+        print "Proxy %s failed while fetching %s" % (PROXY['http'], url)
         return False
     return data
 
@@ -139,6 +144,7 @@ def update_db():
 
 
 if __name__ == '__main__':
+    setup_config()
 
     try:
         with open(DB_FILE) as f: pass
