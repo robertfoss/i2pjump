@@ -5,6 +5,7 @@ import json
 import urllib2
 import time
 import threading
+import os
 
 
 # Configuration
@@ -12,7 +13,7 @@ PROXY = {"http" : "http://127.0.0.1:4444"}
 HOSTS_FILES = ["http://www.i2p2.i2p/hosts.txt"]
 NEWHOSTS_FILES = ["http://stats.i2p/cgi-bin/newhosts.txt"]
 MAX_RETRIES = 6
-DB_FILE = "hosts.db"
+DB_FILE = os.path.dirname(os.path.realpath(__file__)) + "/hosts.db"
 
 lookup_db = {}
 
@@ -147,6 +148,7 @@ def update_db():
 
 if __name__ == '__main__':
     setup_config()
+    print DB_FILE
 
     try:
         with open(DB_FILE) as f: pass
