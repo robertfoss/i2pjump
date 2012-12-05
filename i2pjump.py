@@ -26,8 +26,10 @@ class Handler(BaseHTTPRequestHandler):
         if(len(path) == 2 and path[1] == ''):
             self.send_response(200)
             self.end_headers()
-            self.wfile.write("%d host(s) indexed\n" % (len(lookup_db)))
-            self.wfile.write("\nHosts fetched from: %s" % (str(HOSTS_FILES + NEWHOSTS_FILES)))
+            self.wfile.write("<!DOCTYPE html>\n<html>\n<body>\n%d host(s) indexed\n" % (len(lookup_db)))
+            self.wfile.write("<br>Hosts fetched from: %s" % (str(HOSTS_FILES + NEWHOSTS_FILES)))
+            self.wfile.write("\n<br>\n<br>Source available at <a href=https://github.com/robertfoss/i2pjump>i2pjump@github</a>\n")
+            self.wfile.write("</body>\n</html>\n")
         elif(len(path) == 3 and path[1] == "jump" and path[2] != ''):
             dest = path[2].split('?')
             if dest[0] in lookup_db:
