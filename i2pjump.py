@@ -9,9 +9,9 @@ import os
 
 
 # Configuration
-LISTEN_PORT = 8080
+LISTEN_PORT = 8081
 PROXY = {"http" : "http://127.0.0.1:4444"}
-HOSTS_FILES = ["http://www.i2p2.i2p/hosts.txt", "http://stats.i2p/hosts.txt"]
+HOSTS_FILES = ["http://www.i2p2.i2p/hosts.txt", "http://i2host.i2p/cgi-bin/i2hostetag"]
 NEWHOSTS_FILES = ["http://stats.i2p/cgi-bin/newhosts.txt"]
 MAX_RETRIES = 5
 DB_FILE = os.path.dirname(os.path.realpath(__file__)) + "/hosts.db"
@@ -24,14 +24,22 @@ class Handler(BaseHTTPRequestHandler):
     
     def do_GET(self):        
         path = self.path.split('/')
-
+        print path
         if(len(path) == 2 and path[1] == ''):
             self.send_response(200)
             self.end_headers()
             self.wfile.write("<!DOCTYPE html>\n<html>\n<body>\n%d host(s) indexed\n" % (len(lookup_db)))
             self.wfile.write("<br>Hosts fetched from: %s" % (str(HOSTS_FILES + NEWHOSTS_FILES)))
+            self.wfile.write("\n<br>\n<br>\n<br>Full list of hosts available at 'i2pjump.i2p/hosts'\n<br>")
             self.wfile.write("\n<br>\n<br>Source available at <a href=https://github.com/robertfoss/i2pjump>i2pjump@github</a>\n")
             self.wfile.write("</body>\n</html>\n")
+
+        elif path[1] == "hosts":
+            self.send_response(200)
+            self.end_headers()
+            for key, value in lookup_db.iteritems():
+                self.wfile.write(key + "=" + value + '\n')
+            
         elif(len(path) == 3 and path[1] == "jump" and path[2] != ''):
             dest = path[2].split('?')
             if dest[0] in lookup_db:
@@ -46,6 +54,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.end_headers()
                 self.wfile.write("%s was not found in index\n" % (path[2]))
+
         else:
                 self.send_response(200)
                 self.end_headers()
