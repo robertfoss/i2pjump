@@ -9,10 +9,11 @@ import os
 
 
 # Configuration
+LISTEN_PORT = 8080
 PROXY = {"http" : "http://127.0.0.1:4444"}
-HOSTS_FILES = ["http://www.i2p2.i2p/hosts.txt"]
+HOSTS_FILES = ["http://www.i2p2.i2p/hosts.txt", "http://stats.i2p/hosts.txt"]
 NEWHOSTS_FILES = ["http://stats.i2p/cgi-bin/newhosts.txt"]
-MAX_RETRIES = 6
+MAX_RETRIES = 5
 DB_FILE = os.path.dirname(os.path.realpath(__file__)) + "/hosts.db"
 
 lookup_db = {}
@@ -160,7 +161,7 @@ if __name__ == '__main__':
         init_db()
     
     upd = Updater()
-    server = ThreadedHTTPServer(('localhost', 8080), Handler)
+    server = ThreadedHTTPServer(('localhost', LISTEN_PORT), Handler)
     upd.start()
     try:
         print 'i2pjump started, use <Ctrl-C> to stop'
