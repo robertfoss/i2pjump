@@ -26,6 +26,7 @@ class Handler(BaseHTTPRequestHandler):
         path = self.path.split('/')
         if(len(path) == 2 and path[1] == ''):
             self.send_response(200)
+            self.send_header('Content-type',    'text/html')
             self.end_headers()
             self.wfile.write("<!DOCTYPE html>\n<html>\n<body>\n%d host(s) indexed\n" % (len(lookup_db)))
             self.wfile.write("<br>Hosts fetched from: %s" % (str(HOSTS_FILES + NEWHOSTS_FILES)))
