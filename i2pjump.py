@@ -26,7 +26,7 @@ class Handler(BaseHTTPRequestHandler):
         path = self.path.split('/')
         if(len(path) == 2 and path[1] == ''):
             self.send_response(200)
-            self.send_header('Content-type',    'text/html')
+            self.send_header('Content-type', 'text/html')
             self.end_headers()
             self.wfile.write("<!DOCTYPE html>\n<html>\n<body>\n%d host(s) indexed\n" % (len(lookup_db)))
             self.wfile.write("<br>Hosts fetched from: %s" % (str(HOSTS_FILES + NEWHOSTS_FILES)))
@@ -41,7 +41,7 @@ class Handler(BaseHTTPRequestHandler):
             for key, value in lookup_db.iteritems():
                 self.wfile.write(key + "=" + value + '\n')
             
-        elif(len(path) == 3 and path[1] == "jump" and path[2] != ''):
+        elif(len(path) == 4 and path[1] == "jump" and path[2] != ''):
             dest = path[2].split('?')
             if dest[0] in lookup_db:
                 self.send_response(301)
