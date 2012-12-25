@@ -59,7 +59,7 @@ class Handler(BaseHTTPRequestHandler):
         else:
                 self.send_response(200)
                 self.end_headers()
-                self.wfile.write("Invalid query\n")
+                self.wfile.write("%s is an invalid query\n" % (self.path))
         return
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
