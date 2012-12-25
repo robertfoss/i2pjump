@@ -30,7 +30,7 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write("<!DOCTYPE html>\n<html>\n<body>\n%d host(s) indexed\n" % (len(lookup_db)))
             self.wfile.write("<br>Hosts fetched from: %s" % (str(HOSTS_FILES + NEWHOSTS_FILES)))
-            self.wfile.write("\n<br>\n<br>\n<br>Use jump service by visitin 'i2pjump.i2p/jump/JUMP_DEST'\n<br>")
+            self.wfile.write("\n<br>\n<br>\n<br>Use jump service by visiting 'i2pjump.i2p/jump/JUMP_DESTINATION'\n<br>")
             self.wfile.write("\n<br>\n<br>Full list of hosts available at 'i2pjump.i2p/hosts'\n<br>")
             self.wfile.write("\n<br>\n<br>Source available at <a href=https://github.com/robertfoss/i2pjump>i2pjump@github</a>\n")
             self.wfile.write("</body>\n</html>\n")
