@@ -198,19 +198,20 @@ def update_db():
 
 if __name__ == '__main__':
     setup_config()
-
+    server = ThreadedHTTPServer(('localhost', LISTEN_PORT), Handler)
+    
     try:
         with open(DB_FILE) as f: pass
         load_db()
         print "Loaded %d host(s) from %s" % (len(lookup_db), DB_FILE)
-        if (len(lookup_db) == 0):
-            raise IOError("No hosts parsed")
-    except IOError as e:
         print "Fetching initial set of host"
         init_db()
+        if (len(lookup_db) == 0):
+            raise IOError("No h osts parsed")
+    except IOError as e:
+        print "WTF? DB_FILE is not accesible"
     
     upd = Updater()
-    server = ThreadedHTTPServer(('localhost', LISTEN_PORT), Handler)
     upd.start()
     try:
         print 'i2pjump started, use <Ctrl-C> to stop'
