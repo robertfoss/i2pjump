@@ -112,18 +112,19 @@ class DBUpdater(threading.Thread):
     """Periodically updates the host db."""
 
     def run(self):
-        print "\n[%s] Starting" % (threading.current_thread().__class__.__name__)
+        print "[%s] Starting" % (threading.current_thread().__class__.__name__)
         while(True):
             time.sleep(2*3600)
+            print "[%s] Waking up.." % (threading.current_thread().__class__.__name__)
             update_db()
 
 class DBInitializer(threading.Thread):
     """Initialize the host db."""
 
     def run(self):
-        print "\n[%s] Starting" % (threading.current_thread().__class__.__name__)
+        print "[%s] Starting" % (threading.current_thread().__class__.__name__)
         init_db()
-        print "\n[%s] Done" % (threading.current_thread().__class__.__name__)
+        print "[%s] Done" % (threading.current_thread().__class__.__name__)
 
 
 def load_db():
@@ -176,7 +177,7 @@ def fetch_hosts(hosts_files):
     """Fetch {"domain.i2p" : base64-addr} pairs from I2P jump service."""
     prev_db_size = len(lookup_db)
     for host in hosts_files:
-        print "[%s] Fetching hosts from: %s" % (threading.current_thread().__class__.__name__, host)
+        print "[%s] Fetching hosts from: %s" % (threading.current_thread().__class__.__name__, str(host))
         data = False
         retries = 0
         while(data == False and retries < MAX_RETRIES):
@@ -208,7 +209,7 @@ def fetch_hosts_without_fail(hosts_files):
         unvisited_hosts_files = hosts_files
         for host in unvisited_hosts_files:
             prev_db_size = len(lookup_db)
-            print "[%s] Fetching hosts from: %s" % (threading.current_thread().__class__.__name__, host)
+            print "[%s] Fetching hosts from: %s" % (threading.current_thread().__class__.__name__, str(host))
             data = False
             success = True
             retries = 0
@@ -260,17 +261,18 @@ if __name__ == '__main__':
     except IOError as e:
         print "DB_FILE is not accessible"
     
-    init = DBInitializer()
-    init.start()
-
     upd = DBUpdater()
     upd.start()
 
+    init = DBInitializer()
+    init.start()
+
+
     try:
         server.serve_forever()
-        print "\ni2pjump started, use <Ctrl-C> to stop"
+        print "i2pjump started, use <Ctrl-C> to stop"
     except (KeyboardInterrupt, SystemExit):
-        print "\n"
+        print ""
         for thread in [init,upd]:
             if thread.isAlive():
                 try:
