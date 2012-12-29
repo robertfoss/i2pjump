@@ -112,15 +112,18 @@ class DBUpdater(threading.Thread):
     """Periodically updates the host db."""
 
     def run(self):
-            while(True):
-                time.sleep(2*3600)
-                update_db()
+        print "\n[%s] Starting" % (threading.current_thread().__class__.__name__)
+        while(True):
+            time.sleep(2*3600)
+            update_db()
 
 class DBInitializer(threading.Thread):
     """Initialize the host db."""
 
     def run(self):
+        print "\n[%s] Starting" % (threading.current_thread().__class__.__name__)
         init_db()
+        print "\n[%s] Done" % (threading.current_thread().__class__.__name__)
 
 
 def load_db():
@@ -173,7 +176,7 @@ def fetch_hosts(hosts_files):
     """Fetch {"domain.i2p" : base64-addr} pairs from I2P jump service."""
     prev_db_size = len(lookup_db)
     for host in hosts_files:
-        print "Fetching hosts from: %s" % (host)
+        print "[%s] Fetching hosts from: %s" % (threading.current_thread().__class__.__name__, host)
         data = False
         retries = 0
         while(data == False and retries < MAX_RETRIES):
@@ -188,19 +191,24 @@ def fetch_hosts(hosts_files):
                 key_val = line.split('=')
                 lookup_db[key_val[0]] = key_val[1]
             else:
-                print "A non-address line was downloaded: \"%s\"" % (line)
+                    print "[%s] Odd/bad line found on %s: \"%s\"" % (threading.current_thread().__class__.__name__, host, line)
 
-    new_db_size = len(lookup_db)
-    if (new_db_size != prev_db_size):
-        print("%d host(s) added to the db, totaling %d host(s)\nSaving db...") % (new_db_size - prev_db_size, new_db_size)
-        save_db()
+        if (len(lookup_db) != prev_db_size):
+            print "[%s] %d host(s) added to the db, totaling %d host(s). Saving db..." % (
+                threading.current_thread().__class__.__name__, len(lookup_db) - prev_db_size, len(lookup_db))
+            save_db()
+        else:
+            print "[%s] No new host(s) found at %s" % (threading.current_thread().__class__.__name__, host)
+
 
 def fetch_hosts_without_fail(hosts_files):
     """Fetch {"domain.i2p" : base64-addr} pairs from I2P jump service, and retry failed hosts infinitaly."""
-    while len(hosts_files) > 0:
-        for host in hosts_files:
+    unvisited_hosts_files = hosts_files
+    while len(unvisited_hosts_files) > 0:
+        unvisited_hosts_files = hosts_files
+        for host in unvisited_hosts_files:
             prev_db_size = len(lookup_db)
-            print "Fetching hosts from: %s" % (host)
+            print "[%s] Fetching hosts from: %s" % (threading.current_thread().__class__.__name__, host)
             data = False
             success = True
             retries = 0
@@ -218,15 +226,17 @@ def fetch_hosts_without_fail(hosts_files):
                     key_val = line.split('=')
                     lookup_db[key_val[0]] = key_val[1]
                 else:
-                    print "A non-address line was downloaded: \"%s\"" % (line)
-                    success = False
-            if success:
-                del hosts_files[host]
+                    print "[%s] Odd/bad line found on %s: \"%s\"" % (threading.current_thread().__class__.__name__, host, line)
 
-            new_db_size = len(lookup_db)
-            if (new_db_size != prev_db_size):
-                print("%d host(s) added to the db, totaling %d host(s). Saving db...") % (new_db_size - prev_db_size, new_db_size)
+            if success:
+                hosts_files.remove(host)
+
+            if (len(lookup_db) != prev_db_size):
+                print "[%s] %d host(s) added to the db, totaling %d host(s). Saving db..." % (
+                threading.current_thread().__class__.__name__, len(lookup_db) - prev_db_size, len(lookup_db))
                 save_db()
+            else:
+                print "[%s] No new host(s) found at %s" % (threading.current_thread().__class__.__name__, host)
 
 
 def init_db():
@@ -248,19 +258,17 @@ if __name__ == '__main__':
         load_db()
         print "Loaded %d host(s) from %s" % (len(lookup_db), DB_FILE)
     except IOError as e:
-        print "WTF? DB_FILE is not accesible"
+        print "DB_FILE is not accessible"
     
-    print "\nFetching initial set of host"
     init = DBInitializer()
     init.start()
 
-    print "\nStarting background update task"
     upd = DBUpdater()
     upd.start()
 
     try:
-        print "\ni2pjump started, use <Ctrl-C> to stop\n"
         server.serve_forever()
+        print "\ni2pjump started, use <Ctrl-C> to stop"
     except (KeyboardInterrupt, SystemExit):
         print "\n"
         for thread in [init,upd]:
