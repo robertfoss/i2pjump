@@ -126,7 +126,6 @@ class DBInitializer(threading.Thread):
         init_db()
         print "[%s] Done" % (threading.current_thread().__class__.__name__)
 
-
 def load_db():
     """Load host db from DB_FILE"""
     try:    
@@ -201,7 +200,6 @@ def fetch_hosts(hosts_files):
         else:
             print "[%s] No new host(s) found at %s" % (threading.current_thread().__class__.__name__, host)
 
-
 def fetch_hosts_without_fail(hosts_files):
     """Fetch {"domain.i2p" : base64-addr} pairs from I2P jump service, and retry failed hosts infinitaly."""
     unvisited_hosts_files = hosts_files
@@ -239,16 +237,13 @@ def fetch_hosts_without_fail(hosts_files):
             else:
                 print "[%s] No new host(s) found at %s" % (threading.current_thread().__class__.__name__, host)
 
-
 def init_db():
     """Populate the host db."""
     fetch_hosts_without_fail(HOSTS_FILES+NEWHOSTS_FILES)
 
-
 def update_db():
     """Update the host db."""
     fetch_hosts(NEWHOSTS_FILES)
-
 
 if __name__ == '__main__':
     setup_config()
@@ -263,10 +258,8 @@ if __name__ == '__main__':
     
     upd = DBUpdater()
     upd.start()
-
     init = DBInitializer()
     init.start()
-
 
     try:
         server.serve_forever()
@@ -281,4 +274,3 @@ if __name__ == '__main__':
                     print(str(thread.__class__.__name__) + ' thread could not be terminated')
                 else:
                     print(str(thread.__class__.__name__) + ' thread was terminated')
-
