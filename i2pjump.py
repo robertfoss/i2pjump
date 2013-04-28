@@ -1,11 +1,13 @@
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from SocketServer import ThreadingMixIn
 from urllib2 import HTTPError
+import base64
 import json
 import urllib2
 import time
 import threading
 import os
+
 
 
 # Configuration
@@ -14,7 +16,9 @@ PROXY = {"http" : "http://127.0.0.1:4444"}
 HOSTS_FILES = ["http://www.i2p2.i2p/hosts.txt", "http://i2host.i2p/cgi-bin/i2hostetag"]
 NEWHOSTS_FILES = ["http://stats.i2p/cgi-bin/newhosts.txt"]
 MAX_RETRIES = 5
+BASE64_ADDR_LEN = 516
 DB_FILE = os.path.dirname(os.path.realpath(__file__)) + "/hosts.db"
+FAVICON_ICO = "AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAD///8A////AP///wD///8AhISEeSYmJtkkJCTbKCgo1jY2Nsg6OjrEREREu1ZWVqj///8A////AP///wD///8A////AP///wD///8A////AKqqqlQhKSH/UWdS/zhGOP8kLiT/T2NP/ys2K/9cXlym////AP///wD///8A////AP///wD///8A////AP///wBRUlKufp5+/5/Hn/+Do4P/NUM1/5S6lP+Co4L/GiEa//T09An///8A////AP///wD///8A////AP///wD///8AVFdUuJO5k/+cxJz/eZd5/1NpU/+Vu5X/kLWR/xgfGf3y8vIK////AP///wD///8A////AP///wD///8A+Pj4Bjs8QctPVnf/FRcd/yILdf8tDp//STmo/0BHXP82O1L/kpKSa////wD///8A////AP///wD///8A7u7uD0pEXboXCUz/FjpD/xMre/88Af7/PQH//z0B/v8xIHz/JyFR/3BwcI7///8A////AP///wD///8A////AFhYWKYlAJv/JwCl/wshTv8ElaL/OwH3/z0B//89Af//MgHS/ykAqv8lIDXe////AP///wD///8A////AP///wDo6OgVVFJbrCIAjf8zANL/AKCd/xcYcv8fFJX/LgC9/zwB/v88Afn/DQgg9ujo6BX///8A////AP///wD///8A////AP///wB0dHSKAyMw/wDOzv8B////Af7+/wDJyP8TNIH/Fgo89ba2tkj///8A////AP///wD///8A////AP///wD///8ALDg40gHb2/8B////Af///wH///8B////Ae3t/xw8POL29vYH////AP///wD///8A////AP///wD///8AxsbGOABoaP8A/v7/AP7+/wD+/v8B/v7/Af///wH+/v8AiYn/rKysUv///wD///8A////AP///wD///8A////ALKyskwBjIz/KaOj/w8PD/8JkZH/B7S0/xQsLP8lq6v/AK+u/5eXl2f///8A////AP///wD///8A////AP///wDQ0NAuAGxs/2Ghof/R0dH/TKSk/0mpqf/Z2dn/b6Cg/wCRkf+2trZH////AP///wD///8A////AP///wD///8A////ADpISMQAtbX/JZmZ/wDZ2f8A0dH/QZ6e/wawsP8kS0vb+vr6A////wD///8A////AP///wD///8A////AP///wDY2NgmHkhI4AHHx/8B/v7/Af7+/wHU1P8UT0/qyMjINf///wD///8A////AP///wD///8A////AP///wD///8A////AOzs7BGAgIB+SGlptkZra7h4eHiG4uLiGv///wD///8A////AP///wD///8A+A8AAPgPAADwDwAA8A8AAPAPAADgBwAAwAcAAOAHAADwDwAA8A8AAPAPAADwDwAA8A8AAPAPAAD4HwAA/j8AAA=="
 
 # Global variables
 lookup_db = {}
@@ -26,7 +30,7 @@ def do_jump(self, path):
     global stats
     stats['jump_visited'] += 1
     dest = path[2].split('?')
-    if dest[0] in lookup_db or dest[0] == "hej.i2p":
+    if dest[0] in lookup_db:
         self.send_response(301)
         self.send_header('Content-type', 'text/html')
         if len(dest) == 1:
@@ -80,6 +84,12 @@ def do_index(self):
     self.wfile.write("<br>\n<br>\n<p>Source available at <a href=https://github.com/robertfoss/i2pjump>i2pjump@github</a></p>\n")
     self.wfile.write("</body>\n</html>\n")
 
+def do_favicon(self):
+    self.send_response(200)
+    self.send_header('Content-type', 'image/x-icon')
+    self.end_headers()
+    self.wfile.write(base64.decodestring(FAVICON_ICO))
+
 def do_invalid_query(self):
     global stats
     stats['invalid_query_visited'] += 1
@@ -101,6 +111,8 @@ class Handler(BaseHTTPRequestHandler):
             do_stats(self)
         elif len(path) >= 3 and path[1] == "jump" and path[2] != '':
             do_jump(self, path)
+        elif len(path) == 2 and path[1] == 'favicon.ico':
+            do_favicon(self)
         else:
             do_invalid_query(self)
         return
@@ -189,7 +201,10 @@ def fetch_hosts(hosts_files):
         for line in lines:
             if "=" in line:
                 key_val = line.split('=')
-                lookup_db[key_val[0]] = key_val[1]
+                if len(key_val[1]) != BASE64_ADDR_LEN:
+                    continue
+                if key_val[0] not in lookup_db:
+                    lookup_db[key_val[0]] = key_val[1]
             else:
                     print "[%s] Odd/bad line found on %s: \"%s\"" % (threading.current_thread().__class__.__name__, host, line)
 
@@ -201,7 +216,7 @@ def fetch_hosts(hosts_files):
             print "[%s] No new host(s) found at %s" % (threading.current_thread().__class__.__name__, host)
 
 def fetch_hosts_without_fail(hosts_files):
-    """Fetch {"domain.i2p" : base64-addr} pairs from I2P jump service, and retry failed hosts infinitaly."""
+    """Fetch {"domain.i2p" : base64-addr} pairs from I2P jump service, and retry failed hosts indefinitely."""
     unvisited_hosts_files = hosts_files
     while len(unvisited_hosts_files) > 0:
         unvisited_hosts_files = hosts_files
@@ -223,7 +238,10 @@ def fetch_hosts_without_fail(hosts_files):
             for line in lines:
                 if "=" in line:
                     key_val = line.split('=')
-                    lookup_db[key_val[0]] = key_val[1]
+                    if len(key_val[1]) != BASE64_ADDR_LEN:
+                        continue
+                    if key_val[0] not in lookup_db:
+                        lookup_db[key_val[0]] = key_val[1]
                 else:
                     print "[%s] Odd/bad line found on %s: \"%s\"" % (threading.current_thread().__class__.__name__, host, line)
 
