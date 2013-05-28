@@ -77,6 +77,7 @@ def do_index(self):
     self.send_response(200)
     self.send_header('Content-type', 'text/html')
     self.end_headers()
+    self.wfile.write("<!DOCTYPE html>\n<html>\n<body>\n")
     self.wfile.write("Hosts fetched from: %s\n" % (str(HOSTS_FILES + NEWHOSTS_FILES)))
     self.wfile.write("<br>\n<br>\n<p>Use jump service by visiting 'i2pjump.i2p/jump/JUMP_DESTINATION'</p>\n")
     self.wfile.write("\n<p>Full list of hosts available at <a href=\"/hosts\">i2pjump.i2p/hosts</a>\n")
