@@ -190,10 +190,9 @@ def verifyDestination(destination):
     if len(destination) < 10:
         return False
     
-    if destination[-4:len(destination)] == "AAAA":
-        return True
-       
-    if destination[-10:len(destination)] == "AEAAEAAA==":
+    if destination[-4:len(destination)] == "AAAA" or
+       destination[-8:len(destination)] == "AEAAEAAA" or
+       destination[-10:len(destination)] == "AEAAEAAA==":
         return True
 
     return False
