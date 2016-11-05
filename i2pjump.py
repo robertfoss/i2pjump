@@ -254,6 +254,7 @@ def fetchHostsWithoutFail(hosts_files):
     while len(unvisited_hosts_files) > 0:
         unvisited_hosts_files = hosts_files
         for host in unvisited_hosts_files:
+            time.sleep(5)
             prev_db_size = len(lookupDb)
             print("[%s] Fetching hosts from: %s" % (threading.current_thread().__class__.__name__, str(host)))
             data = False
@@ -277,6 +278,7 @@ def fetchHostsWithoutFail(hosts_files):
                 saveDb()
             else:
                 print("[%s] No new host(s) found at %s" % (threading.current_thread().__class__.__name__, host))
+
 
 def init_db():
     """Populate the host db."""
