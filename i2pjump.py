@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-from SocketServer import ThreadingMixIn
-from urllib2 import HTTPError
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from socketserver import ThreadingMixIn
+from urllib.error import HTTPError
+import urllib.request
 import base64
 import json
-import urllib2
 import time
 import threading
 import os
@@ -39,14 +39,14 @@ def doJump(self, path):
             self.send_header("Location", "http://"+dest[0]+"/"+"?i2paddresshelper="+lookupDb[dest[0]])
         else:
             self.send_header("Location", "http://"+dest[0]+"/"+"?"+dest[1]+"&i2paddresshelper="+lookupDb[dest[0]])
-        self.wfile.write("Redirecting to %s..\n" % (dest[0]))
+        self.output("Redirecting to %s..\n" % (dest[0]))
         self.end_headers()
     else:
         stats['jump_not_found'] += 1
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
         self.end_headers()
-        self.wfile.write("%s was not found in index\n" % (path[2]))
+        self.output("%s was not found in index\n" % (path[2]))
 
 def doHosts(self):
     global stats
@@ -55,7 +55,7 @@ def doHosts(self):
     self.send_header('Content-type', 'text/plain')
     self.end_headers()
     for key, value in lookupDb.iteritems():
-        self.wfile.write(key + "=" + value + '\n')
+        self.output(key + "=" + value + '\n')
 
 def doStats(self):
     global stats
@@ -63,15 +63,15 @@ def doStats(self):
     self.send_response(200)
     self.send_header('Content-type', 'text/html')
     self.end_headers()
-    self.wfile.write("<!DOCTYPE html>\n<html>\n<body>\n")
-    self.wfile.write("<p>%d host(s) indexed</p>\n" % (len(lookupDb)))
-    self.wfile.write("<p>index visited %d times</p>\n" % (stats['index_visited']))
-    self.wfile.write("<p>/stats visited %d times</p>\n" % (stats['stats_visited']))
-    self.wfile.write("<p>/hosts visited %d times</p>\n" % (stats['hosts_visited']))
+    self.output("<!DOCTYPE html>\n<html>\n<body>\n")
+    self.output("<p>%d host(s) indexed</p>\n" % (len(lookupDb)))
+    self.output("<p>index visited %d times</p>\n" % (stats['index_visited']))
+    self.output("<p>/stats visited %d times</p>\n" % (stats['stats_visited']))
+    self.output("<p>/hosts visited %d times</p>\n" % (stats['hosts_visited']))
     pct_failure = 0 if (stats['jump_not_found'] == 0) else (100*stats['jump_not_found'] / stats['jump_visited'])
-    self.wfile.write("<p>/jump/ visited %d times, not found %d%s </p>\n" % (stats['jump_visited'], pct_failure, "%"))
-    self.wfile.write("<p>invalid query requested %d times</p>\n" % (stats['invalid_query_visited']))
-    self.wfile.write("</body>\n</html>\n")
+    self.output("<p>/jump/ visited %d times, not found %d%s </p>\n" % (stats['jump_visited'], pct_failure, "%"))
+    self.output("<p>invalid query requested %d times</p>\n" % (stats['invalid_query_visited']))
+    self.output("</body>\n</html>\n")
     
 def doIndex(self):
     global stats
@@ -79,19 +79,19 @@ def doIndex(self):
     self.send_response(200)
     self.send_header('Content-type', 'text/html')
     self.end_headers()
-    self.wfile.write("<!DOCTYPE html>\n<html>\n<body>\n")
-    self.wfile.write("Hosts fetched from: %s\n" % (str(HOSTS_FILES + NEWHOSTS_FILES)))
-    self.wfile.write("<br>\n<br>\n<p>Use jump service by visiting 'i2pjump.i2p/jump/JUMP_DESTINATION'</p>\n")
-    self.wfile.write("\n<p>Full list of hosts available at <a href=\"/hosts\">i2pjump.i2p/hosts</a>\n")
-    self.wfile.write("\n<p>Stats available at <a href=\"/stats\">i2pjump.i2p/stats</a>\n")
-    self.wfile.write("<br>\n<br>\n<p>Source available at <a href=https://github.com/robertfoss/i2pjump>i2pjump@github</a></p>\n")
-    self.wfile.write("</body>\n</html>\n")
+    self.output("<!DOCTYPE html>\n<html>\n<body>\n")
+    self.output("Hosts fetched from: %s\n" % (str(HOSTS_FILES + NEWHOSTS_FILES)))
+    self.output("<br>\n<br>\n<p>Use jump service by visiting 'i2pjump.i2p/jump/JUMP_DESTINATION'</p>\n")
+    self.output("\n<p>Full list of hosts available at <a href=\"/hosts\">i2pjump.i2p/hosts</a>\n")
+    self.output("\n<p>Stats available at <a href=\"/stats\">i2pjump.i2p/stats</a>\n")
+    self.output("<br>\n<br>\n<p>Source available at <a href=https://github.com/robertfoss/i2pjump>i2pjump@github</a></p>\n")
+    self.output("</body>\n</html>\n")
 
 def doFavicon(self):
     self.send_response(200)
     self.send_header('Content-type', 'image/png')
     self.end_headers()
-    self.wfile.write(base64.decodestring(FAVICON_ICO))
+    self.output(base64.decodestring(FAVICON_ICO))
 
 def doInvalidQuery(self):
     global stats
@@ -99,7 +99,9 @@ def doInvalidQuery(self):
     self.send_response(200)
     self.send_header('Content-type', 'text/html')
     self.end_headers()
-    self.wfile.write("%s is an invalid query\n" % (self.path))
+    self.output("%s is an invalid query\n" % (self.path))
+
+
 
 class Handler(BaseHTTPRequestHandler):
     """Handle requests in accordance with I2P jumpservices."""
@@ -120,6 +122,12 @@ class Handler(BaseHTTPRequestHandler):
             doInvalidQuery(self)
         return
 
+    def output(self, data):
+        # Assume data is a string
+        byte_arr = bytes(data, "utf8")
+        self.wfile.write(byte_arr)
+        return
+
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in a separate thread."""
 
@@ -127,63 +135,63 @@ class DBUpdater(threading.Thread):
     """Periodically updates the host db."""
 
     def run(self):
-        print "[%s] Starting" % (threading.current_thread().__class__.__name__)
+        print("[%s] Starting" % (threading.current_thread().__class__.__name__))
         while(True):
             time.sleep(2*3600)
-            print "[%s] Waking up.." % (threading.current_thread().__class__.__name__)
+            print("[%s] Waking up.." % (threading.current_thread().__class__.__name__))
             update_db()
 
 class DBInitializer(threading.Thread):
     """Initialize the host db."""
 
     def run(self):
-        print "[%s] Starting" % (threading.current_thread().__class__.__name__)
+        print("[%s] Starting" % (threading.current_thread().__class__.__name__))
         init_db()
-        print "[%s] Done" % (threading.current_thread().__class__.__name__)
+        print("[%s] Done" % (threading.current_thread().__class__.__name__))
 
 def loadDb():
     """Load host db from DB_FILE"""
     try:    
         fp = open(DB_FILE, 'r+')
-    except IOError: print "Unable to open file: %s" % (DB_FILE)
+    except IOError: print("Unable to open file: %s" % (DB_FILE))
     else:
         with fp:
             try:
                 global lookupDb
                 lookupDb = json.load(fp)
-            except ValueError: print "Unable to parse %s as json." % (DB_FILE)
+            except ValueError: print("Unable to parse %s as json." % (DB_FILE))
 
 def saveDb():
     """Save host db to DB_FILE"""
     try:    
         fp = open(DB_FILE, 'w+')
-    except IOError: print "Unable to open file: %s" % (DB_FILE)
+    except IOError: print("Unable to open file: %s" % (DB_FILE))
     else:
         with fp:
             json.dump(lookupDb, fp)
 
 def setupConfig():
-    proxy = urllib2.ProxyHandler(PROXY)
-    opener = urllib2.build_opener(proxy)
-    urllib2.install_opener(opener)
+    proxy = urllib.request.ProxyHandler(PROXY)
+    opener = urllib.request.build_opener(proxy)
+    urllib.request.install_opener(opener)
 
 def fetchData(url):
     """Fetch host data from I2P jump service and interpret failure modes."""
     try:
-        hosts_file = urllib2.urlopen(url)
+        hosts_file = urllib.request.urlopen(url)
         data = hosts_file.read()
         hosts_file.close()
-        if "Banned<" in data:   ## Throttled by stats.i2p
-            print "%s through proxy %s returned \'Banned\'" % (url, PROXY['http'])
+        if "Banned<" in str(data):   ## Throttled by stats.i2p
+            print("%s through proxy %s returned \'Banned\'" % (url, PROXY['http']))
             return False
         if len(data) == 0:      ## Connection failed
-            print "%s through proxy %s returned no data" % (url, PROXY['http'])
+            print("%s through proxy %s returned no data" % (url, PROXY['http']))
             return False
-    except HTTPError, e:
-        print "HTTP Error #%d: %s" % (e.code, url)
+    except HTTPError as e:
+        print("HTTP Error #%d: %s" % (e.code, url))
         return False
-    except IOError, e:
-        print "Proxy %s failed while fetching %s" % (PROXY['http'], url)
+    except IOError as e:
+        print("Proxy %s failed while fetching %s" % (PROXY['http'], url))
         return False
     return data.strip()
     
@@ -192,9 +200,7 @@ def verifyDestination(destination):
     if len(destination) < 10:
         return False
     
-    if destination[-4:len(destination)] == "AAAA" or
-       destination[-8:len(destination)] == "AEAAEAAA" or
-       destination[-10:len(destination)] == "AEAAEAAA==":
+    if destination[-4:len(destination)] == "AAAA" or destination[-8:len(destination)] == "AEAAEAAA" or destination[-10:len(destination)] == "AEAAEAAA==":
         return True
 
     return False
@@ -202,7 +208,7 @@ def verifyDestination(destination):
     
 def parseEntries(data):
     """Parse a blob of data as lines of key-value pairs"""
-    lines = data.split('\n')
+    lines = str(data).split('\n')
     
     for line in lines:
         if line[0:1] == "#":
@@ -212,20 +218,20 @@ def parseEntries(data):
             key_val = line.strip().split('=', 1)
 
             if not verifyDestination(key_val[1]):
-                print "[%s] Invalid line found: \"%s\"" % (threading.current_thread().__class__.__name__, line)
+                print("[%s] Invalid line found: \"%s\"" % (threading.current_thread().__class__.__name__, line))
                 continue
 
             if key_val[0] not in lookupDb:
                 lookupDb[key_val[0]] = key_val[1]
         else:
-            print "[%s] Invalid line found: \"%s\"" % (threading.current_thread().__class__.__name__, line)
+            print("[%s] Invalid line found: \"%s\"" % (threading.current_thread().__class__.__name__, line))
     
 
 def fetchHosts(hosts_files):
     """Fetch {"domain.i2p" : base64-addr} pairs from I2P jump service."""
     prev_db_size = len(lookupDb)
     for host in hosts_files:
-        print "[%s] Fetching hosts from: %s" % (threading.current_thread().__class__.__name__, str(host))
+        print("[%s] Fetching hosts from: %s" % (threading.current_thread().__class__.__name__, str(host)))
         data = False
         retries = 0
         while(data == False and retries < MAX_RETRIES):
@@ -236,11 +242,11 @@ def fetchHosts(hosts_files):
         parseEntries(data)
 
         if (len(lookupDb) != prev_db_size):
-            print "[%s] %d host(s) added to the db, totaling %d host(s). Saving db..." % (
-                threading.current_thread().__class__.__name__, len(lookupDb) - prev_db_size, len(lookupDb))
+            print("[%s] %d host(s) added to the db, totaling %d host(s). Saving db..." % (
+                threading.current_thread().__class__.__name__, len(lookupDb) - prev_db_size, len(lookupDb)))
             saveDb()
         else:
-            print "[%s] No new host(s) found at %s" % (threading.current_thread().__class__.__name__, host)
+            print("[%s] No new host(s) found at %s" % (threading.current_thread().__class__.__name__, host))
 
 def fetchHostsWithoutFail(hosts_files):
     """Fetch {"domain.i2p" : base64-addr} pairs from I2P jump service, and retry failed hosts indefinitely."""
@@ -249,7 +255,7 @@ def fetchHostsWithoutFail(hosts_files):
         unvisited_hosts_files = hosts_files
         for host in unvisited_hosts_files:
             prev_db_size = len(lookupDb)
-            print "[%s] Fetching hosts from: %s" % (threading.current_thread().__class__.__name__, str(host))
+            print("[%s] Fetching hosts from: %s" % (threading.current_thread().__class__.__name__, str(host)))
             data = False
             success = True
             retries = 0
@@ -266,11 +272,11 @@ def fetchHostsWithoutFail(hosts_files):
                 hosts_files.remove(host)
 
             if (len(lookupDb) != prev_db_size):
-                print "[%s] %d host(s) added to the db, totaling %d host(s). Saving db..." % (
-                threading.current_thread().__class__.__name__, len(lookupDb) - prev_db_size, len(lookupDb))
+                print("[%s] %d host(s) added to the db, totaling %d host(s). Saving db..." % (
+                threading.current_thread().__class__.__name__, len(lookupDb) - prev_db_size, len(lookupDb)))
                 saveDb()
             else:
-                print "[%s] No new host(s) found at %s" % (threading.current_thread().__class__.__name__, host)
+                print("[%s] No new host(s) found at %s" % (threading.current_thread().__class__.__name__, host))
 
 def init_db():
     """Populate the host db."""
@@ -287,9 +293,9 @@ if __name__ == '__main__':
     try:
         with open(DB_FILE) as f: pass
         loadDb()
-        print "Loaded %d host(s) from %s" % (len(lookupDb), DB_FILE)
+        print("Loaded %d host(s) from %s" % (len(lookupDb), DB_FILE))
     except IOError as e:
-        print "DB_FILE is not accessible"
+        print("DB_FILE is not accessible")
     
     upd = DBUpdater()
     upd.start()
@@ -298,9 +304,9 @@ if __name__ == '__main__':
 
     try:
         server.serve_forever()
-        print "i2pjump started, use <Ctrl-C> to stop"
+        print("i2pjump started, use <Ctrl-C> to stop")
     except (KeyboardInterrupt, SystemExit):
-        print ""
+        print("")
         for thread in [init,upd]:
             if thread.isAlive():
                 try:
