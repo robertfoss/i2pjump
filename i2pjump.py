@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from SocketServer import ThreadingMixIn
 from urllib2 import HTTPError
