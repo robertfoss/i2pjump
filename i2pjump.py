@@ -65,7 +65,7 @@ def doHosts(self):
     self.send_response(200)
     self.send_header('Content-type', 'text/plain')
     self.end_headers()
-    for key, value in lookupDb.iteritems():
+    for key, value in lookupDb.items():
         self.output(key + "=" + value + '\n')
 
 def doStats(self):
