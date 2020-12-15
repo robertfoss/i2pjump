@@ -187,9 +187,9 @@ def setupConfig():
 def fetchData(url):
     """Fetch host data from I2P jump service and interpret failure modes."""
     try:
-        hosts_file = urllib.request.urlopen(url)
-        data = hosts_file.read()
-        hosts_file.close()
+        http_request = urllib.request.urlopen(url)
+        data = http_request.read().decode('utf-8')
+        http_request.close()
         if "Banned<" in str(data):   ## Throttled by stats.i2p
             print("%s through proxy %s returned \'Banned\'" % (url, PROXY['http']))
             return False
