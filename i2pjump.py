@@ -206,13 +206,8 @@ def fetchData(url):
 
 def verifyDestination(destination):
     """Verify that a destination could be valid"""
-    if len(destination) < 10:
-        return False
 
-    if destination[-4:len(destination)] == "AAAA" or destination[-8:len(destination)] == "AEAAEAAA" or destination[-10:len(destination)] == "AEAAEAAA==":
-        return True
-
-    return False
+    return True
 
 def parseEntries(data):
     """Parse a blob of data as lines of key-value pairs"""
