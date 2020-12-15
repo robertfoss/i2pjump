@@ -83,7 +83,7 @@ def doStats(self):
     self.output("<p>/jump/ visited %d times, not found %d%s </p>\n" % (stats['jump_visited'], pct_failure, "%"))
     self.output("<p>invalid query requested %d times</p>\n" % (stats['invalid_query_visited']))
     self.output("</body>\n</html>\n")
-    
+
 def doIndex(self):
     global stats
     stats['index_visited'] += 1
@@ -114,13 +114,13 @@ def doInvalidQuery(self):
 
 class Handler(BaseHTTPRequestHandler):
     """Handle requests in accordance with I2P jumpservices."""
-    
-    def do_GET(self):        
+
+    def do_GET(self):
         path = self.path.split('/')
         if len(path) == 2 and path[1] == '':
             doIndex(self)
         elif len(path) >=2 and path[1] == "hosts":
-            doHosts(self) 
+            doHosts(self)
         elif len(path) >=2 and path[1] == "stats":
             doStats(self)
         elif len(path) >= 3 and path[1] == "jump" and path[2] != '':
@@ -160,7 +160,7 @@ class DBInitializer(threading.Thread):
 
 def loadDb():
     """Load host db from DB_FILE"""
-    try:    
+    try:
         fp = open(DB_FILE, 'r+')
     except IOError: print("Unable to open file: %s" % (DB_FILE))
     else:
@@ -172,7 +172,7 @@ def loadDb():
 
 def saveDb():
     """Save host db to DB_FILE"""
-    try:    
+    try:
         fp = open(DB_FILE, 'w+')
     except IOError: print("Unable to open file: %s" % (DB_FILE))
     else:
@@ -203,22 +203,21 @@ def fetchData(url):
         print("Proxy %s failed while fetching %s" % (PROXY['http'], url))
         return False
     return data.strip()
-    
+
 def verifyDestination(destination):
     """Verify that a destination could be valid"""
     if len(destination) < 10:
         return False
-    
+
     if destination[-4:len(destination)] == "AAAA" or destination[-8:len(destination)] == "AEAAEAAA" or destination[-10:len(destination)] == "AEAAEAAA==":
         return True
 
     return False
 
-    
 def parseEntries(data):
     """Parse a blob of data as lines of key-value pairs"""
     lines = str(data).split('\n')
-    
+
     for line in lines:
         if line[0:1] == "#":
             continue
@@ -234,7 +233,6 @@ def parseEntries(data):
                 lookupDb[key_val[0]] = key_val[1]
         else:
             print("[%s] Invalid line found: \"%s\"" % (threading.current_thread().__class__.__name__, line))
-    
 
 def fetchHosts(hosts_files):
     """Fetch {"domain.i2p" : base64-addr} pairs from I2P jump service."""
@@ -301,14 +299,14 @@ if __name__ == '__main__':
     setupConfig()
     server = ThreadedHTTPServer((LISTEN_HOST, LISTEN_PORT), Handler)
     print("[INFO] Listening on: " + LISTEN_HOST + ":" + str(LISTEN_PORT))
-    
+
     try:
         with open(DB_FILE) as f: pass
         loadDb()
         print("[INFO] Loaded %d host(s) from %s" % (len(lookupDb), DB_FILE))
     except IOError as e:
         print("DB_FILE is not accessible")
-    
+
     upd = DBUpdater()
     upd.start()
     init = DBInitializer()
