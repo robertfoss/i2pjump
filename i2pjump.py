@@ -50,7 +50,6 @@ def doJump(self, path):
             self.send_header("Location", "http://"+dest[0]+"/"+"?i2paddresshelper="+lookupDb[dest[0]])
         else:
             self.send_header("Location", "http://"+dest[0]+"/"+"?"+dest[1]+"&i2paddresshelper="+lookupDb[dest[0]])
-        self.output("Redirecting to %s..\n" % (dest[0]))
         self.end_headers()
     else:
         stats['jump_not_found'] += 1
