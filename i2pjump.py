@@ -39,24 +39,32 @@ lookupDb = {}
 stats = {'jump_visited': 0, 'index_visited': 0, 'hosts_visited' : 0, 'jump_not_found' : 0,
          'stats_visited' : 0, 'invalid_query_visited' : 0}
 
-def doJump(self, path):
+def doJump(self, url):
     global stats
     stats['jump_visited'] += 1
-    dest = path[2].split('?')
-    if dest[0] in lookupDb:
+
+    hostname = url[2]
+    path = "/".join(url[3:])
+    ending = url[-1].split('?')
+
+    if len(ending) > 1:
+        path = ending[0]
+        args = ending[1]
+
+    if hostname in lookupDb:
         self.send_response(301)
         self.send_header('Content-type', 'text/html')
-        if len(dest) == 1:
-            self.send_header("Location", "http://"+dest[0]+"/"+"?i2paddresshelper="+lookupDb[dest[0]])
+        if len(argstr) == 1:
+            self.send_header("Location", "http://"+hostname+"/"+path+"?i2paddresshelper="+lookupDb[hostname])
         else:
-            self.send_header("Location", "http://"+dest[0]+"/"+"?"+dest[1]+"&i2paddresshelper="+lookupDb[dest[0]])
+            self.send_header("Location", "http://"+hostname+"/"+path+"?"+args+"&i2paddresshelper="+lookupDb[hostname])
         self.end_headers()
     else:
         stats['jump_not_found'] += 1
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
         self.end_headers()
-        self.output("%s was not found in index\n" % (path[2]))
+        self.output("%s was not found in index\n" % (url[2]))
 
 def doHosts(self):
     global stats
