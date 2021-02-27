@@ -54,7 +54,7 @@ def doJump(self, url):
     if hostname in lookupDb:
         self.send_response(301)
         self.send_header('Content-type', 'text/html')
-        if len(argstr) == 1:
+        if len(ending) == 1:
             self.send_header("Location", "http://"+hostname+"/"+path+"?i2paddresshelper="+lookupDb[hostname])
         else:
             self.send_header("Location", "http://"+hostname+"/"+path+"?"+args+"&i2paddresshelper="+lookupDb[hostname])
