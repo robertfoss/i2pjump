@@ -1,6 +1,6 @@
 # i2pjump
 
-I2P jump service. A sort of slave DNS server for I2P.
+I2P jump service. A sort of dumb DNS server for I2P.
 
 ## Running
 
